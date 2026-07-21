@@ -1,6 +1,8 @@
 # Phase P-4 — Batch & parallelism
 
-**ID:** P-4 · **Status:** Not started · **Index:** [IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md)
+**ID:** P-4 · **Status:** Done (2026-07-21) · **Index:** [IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md)
+
+> Completion: batch `POST /v1/validate-batch` (goroutine-per-puzzle, order-preserved, size cap 413, 415) solvedCount 25/25; `SolveParallel` byte-identical to `Solve`; **`go test -race` clean (real gate — gcc installed)**; ADR-0006 negative result confirmed (intra-puzzle ~5.5x SLOWER). jasnah PASS (mutation-tested race-freedom); leanness dedup (-70 lines, runEngine parameterized) applied + re-gated PASS.
 
 ## Goal
 A batch endpoint that solves a list of puzzles concurrently (one goroutine per puzzle, race-free) and
@@ -92,6 +94,31 @@ Re-run P-0 + P-1 (+ P-2 if landed) automated checks.
 
 ## Implementation notes (filled in by the builder)
 > Record decisions and cross-cutting discoveries here.
+
+**Landed 2026-07-21 (branch phase/p-4-batch-parallel, baseline b10fa08).**
+
+Source added (allow-list only):
+- `internal/api/batch.go` — `BatchHandler()` + `const MaxBatchPuzzles = 256`.
+- `internal/solver/solve_parallel.go` — `SolveParallel` + `runEngineParallel` + `computeCandidatesParallel`.
+- `cmd/server/main.go` — registered `POST /v1/validate-batch` inside the existing `SecurityHeaders(CORS(Recover(MaxBytes(routes()))))` chain.
+
+Decisions:
+- **Goroutine-per-puzzle, disjoint-index writes (ADR-0006).** Each puzzle is parsed+solved in its own goroutine writing ONLY `items[i]`; a `sync.WaitGroup` joins. `sudoku.Grid` is a value type (`[81]uint8`, no pointers), so the per-goroutine grid lives on that goroutine's stack — the copy is intrinsic, not a defensive clone. No append-from-goroutine, no shared mutable state → `-race` clean (verified, incl. 16 concurrent batch requests in TestAC2_Batch_RaceFreeUnderConcurrentRequests). Cox-Buday: the WaitGroup + preallocated result slice is the "no shared writes" fan-out; ownership of each index is transferred to exactly one goroutine.
+- **`MaxBatchPuzzles = 256`.** The list-length cap IS the goroutine-count bound — a request can never fan out unbounded goroutines. Over-cap by COUNT is the primary 413 path (checked before any solving, so AC-4's "no results leaked" holds). `http.MaxBytesReader` (1 MiB, own cap so the handler is bounded even driven directly in tests) is the byte-cap defense; a tripped reader surfaces `*http.MaxBytesError` via `errors.As` → the same 413/`invalid_input` envelope.
+- **F-12 gate mirrors solve.go** — `mime.ParseMediaType` content-type check BEFORE the body is read; non-JSON → 415.
+- **CRLF (D-Q1):** `strings.TrimSpace(line)` before `sudoku.Parse` handles both the trailing-CR CRLF-split artifact and the missing-final-newline last puzzle. `Puzzle` echoes the RAW input line (order/identity marker); parse failure is a per-item not-solved, never a whole-batch failure.
+- **SolveParallel = byte-identical to Solve (ADR-0012).** `runEngineParallel` is `runEngine` verbatim with ONE substitution: `computeCandidates` → `computeCandidatesParallel`. The productive-step selection, elim-layering, event append, and terminal-status logic are the identical sequential code, so Events/counters/HardestTechnique are byte-identical. The parallel part is genuinely concurrent read-only work: peer masks (rows/cols/boxes) are built once sequentially, then the per-cell candidate derivation fans out across 3 bands of 27 cells, each goroutine writing ONLY its disjoint `cand[i]` indices while reading the masks read-only. `CandidateChecks` and the zero-candidate flag are folded AFTER the join in fixed row-major order, so they never depend on goroutine scheduling → deterministic across runs (TestAC6_..._DeterministicAcrossRuns passes).
+
+**ADR-0006 negative-result benchmark (i7-14700K, windows/amd64, 25 seed grids/op):**
+
+| Benchmark | ns/op | B/op | allocs/op |
+|---|---|---|---|
+| `BenchmarkSolveSequential-28` | 621,559 | 592,610 | 4,350 |
+| `BenchmarkSolveIntraParallel-28` | 3,453,303 | 1,318,684 | 19,475 |
+
+Intra-puzzle scan-parallelism is **~5.6x SLOWER** and allocates ~4.5x more. A sub-millisecond 9x9 solve cannot amortise per-pass goroutine spawn/join overhead (AUDIT §P2 confirmed). This is the honest UC-5 story: it ships as a benchmarked negative result, never as a speed feature. The REAL parallelism win is inter-puzzle (goroutine-per-puzzle in the batch handler), not intra-puzzle.
+
+Gates (all green): `go build ./...`, `go vet ./...`, `go test -race -count=1 ./...`, `go test -bench=. -benchmem ./internal/solver/`.
 
 ## Deliverable line
 `Phase 4 ready for review` OR `Phase 4 blocked because: <one sentence>`.

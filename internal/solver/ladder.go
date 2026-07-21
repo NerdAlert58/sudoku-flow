@@ -94,7 +94,7 @@ func ladderIndexOf(t Technique) int {
 // and ceiling (grade) tests: floor(T) caps at T's predecessor and must NOT solve; ceiling(T)
 // caps at T and must solve.
 func SolveWithMaxTechnique(g sudoku.Grid, max Technique) SolveResult {
-	return runEngine(g, ladderIndexOf(max))
+	return runEngine(g, computeCandidates, ladderIndexOf(max))
 }
 
 // Grade returns the ADR-0013 difficulty band of g's solve — the band of the hardest technique

@@ -110,11 +110,15 @@ type engine struct {
 }
 
 // runEngine drives the solve loop with the ladder enabled up to (and including) maxIdx.
-// Each pass recomputes the candidate model, aborts to unsolvable on a zero-candidate cell,
-// then applies the FIRST enabled technique (cheapest-first) that makes a productive step —
-// a single placement, or an advanced elimination of at least one live candidate. A pass that
-// makes no progress on an incomplete grid is stalled; a full grid is solved.
-func runEngine(g sudoku.Grid, maxIdx int) SolveResult {
+// Each pass recomputes the candidate model via compute (the sequential computeCandidates for
+// Solve, the concurrent computeCandidatesParallel for SolveParallel — the ONLY difference
+// between the two entry points), aborts to unsolvable on a zero-candidate cell, then applies
+// the FIRST enabled technique (cheapest-first) that makes a productive step — a single
+// placement, or an advanced elimination of at least one live candidate. A pass that makes no
+// progress on an incomplete grid is stalled; a full grid is solved. compute must be a pure,
+// byte-identical candidate derivation so the event log and counters stay deterministic
+// (ADR-0012) regardless of which strategy is passed.
+func runEngine(g sudoku.Grid, compute func(b *[81]uint8, checks *int) (cand [81]uint16, zero bool), maxIdx int) SolveResult {
 	e := &engine{hardestIdx: -1}
 	for i := 0; i < 81; i++ {
 		e.board[i] = g.At(i)
@@ -128,7 +132,7 @@ func runEngine(g sudoku.Grid, maxIdx int) SolveResult {
 		}
 		e.iterations++
 
-		basic, _ := computeCandidates(&e.board, &e.checks)
+		basic, _ := compute(&e.board, &e.checks)
 		zero := false
 		for i := 0; i < 81; i++ {
 			if e.board[i] != 0 {
@@ -184,7 +188,7 @@ func runEngine(g sudoku.Grid, maxIdx int) SolveResult {
 
 // Solve runs the full ladder to fixpoint (ADR-0002). It is the maximal SolveWithMaxTechnique.
 func Solve(g sudoku.Grid) SolveResult {
-	return runEngine(g, len(ladderTechniques)-1)
+	return runEngine(g, computeCandidates, len(ladderTechniques)-1)
 }
 
 // computeCandidates returns the basic candidate bitset of every empty cell (bit d ⇔ digit d is

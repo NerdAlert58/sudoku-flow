@@ -14,7 +14,7 @@
 | P-1 | Solver core & singles | Solve loop + event log + metric quartet + three-status decision + naked/hidden singles; `POST /v1/solve` solves all 25 seed puzzles, replay-proven | P-0 | Done (2026-07-20) | [P-1](docs/phases/P-1-solver-core.md) |
 | P-2 | Advanced ladder & fixtures | Locked candidates → colouring; labeled per-technique fixture (≥3 each); difficulty grader | P-1 | Done (2026-07-21) | [P-2](docs/phases/P-2-advanced-ladder.md) |
 | P-3 | Generator | Symmetry + backtracking uniqueness counter + digger + difficulty targeting; `POST /v1/generate` | P-2 | Done (2026-07-21) | [P-3](docs/phases/P-3-generator.md) |
-| P-4 | Batch & parallelism | `POST /v1/validate-batch` goroutine-per-puzzle + intra-puzzle negative-result benchmark; `-race` clean | P-1 | Not started | [P-4](docs/phases/P-4-batch-parallel.md) |
+| P-4 | Batch & parallelism | `POST /v1/validate-batch` goroutine-per-puzzle + intra-puzzle negative-result benchmark; `-race` clean | P-1 | Done (2026-07-21) | [P-4](docs/phases/P-4-batch-parallel.md) |
 | P-5 | Embedded UI | `embed.FS` McKinsey-clean SPA + security headers/CORS/output-encoding | P-1 | Done (2026-07-21) | [P-5](docs/phases/P-5-ui.md) |
 | P-6 | CI/CD & Ship | GitHub Actions gates + manual Vercel deploy + govulncheck + SHA-pinning + README | P-0..P-5 | Not started | [P-6](docs/phases/P-6-cicd-ship.md) |
 

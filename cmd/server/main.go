@@ -44,12 +44,13 @@ func run() error {
 }
 
 // routes registers the /v1 endpoints. Health and solve are wired through P-1, generate through
-// P-3; validate-batch lands in a later phase against the already-frozen contract types.
+// P-3; validate-batch (P-4) fans out one goroutine per puzzle against the frozen contract types.
 func routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /v1/health", api.HealthHandler())
 	mux.Handle("POST /v1/solve", api.SolveHandler())
 	mux.Handle("POST /v1/generate", api.GenerateHandler())
+	mux.Handle("POST /v1/validate-batch", api.BatchHandler())
 	// GET / serves the embedded SPA. The /v1 patterns above are more specific and win; this is
 	// the catch-all for GET, so index.html and its assets (app.js, style.css) resolve here.
 	mux.Handle("GET /", api.UIHandler())
