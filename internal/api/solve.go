@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"mime"
 	"net/http"
-	"time"
 
 	"github.com/scottbushyhead/sudoku-flow/internal/solver"
 	"github.com/scottbushyhead/sudoku-flow/internal/sudoku"
@@ -50,9 +49,11 @@ func SolveHandler() http.Handler {
 			return
 		}
 
-		start := time.Now()
+		// Solve-only timing (P3/ADR-0007, excludes transport) via the high-resolution
+		// monotonic timer so a sub-millisecond solve reads a real value on Windows too.
+		start := hiNow()
 		res := solver.Solve(grid)
-		solveTimeMs := float64(time.Since(start).Microseconds()) / 1000.0
+		solveTimeMs := hiElapsedMs(start)
 
 		writeJSON(w, http.StatusOK, SolveResponse{
 			APIVersion:      APIVersion,

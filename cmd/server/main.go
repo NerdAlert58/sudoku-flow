@@ -32,7 +32,11 @@ func main() {
 // wiring testable and gives a single error return for the process to act on (Ryer's
 // "return an error from run" pattern).
 func run() error {
-	handler := api.Recover(api.MaxBytes(routes(), maxBodyBytes))
+	// Outer chain: SecurityHeaders(CORS(...)) at the edge so the F-10 headers and the F-9 CORS
+	// decision land on every response — the SPA at "/" and every /v1/* endpoint, including a
+	// recovered 500 (the headers are set before Recover ever writes). logRequests stays
+	// outermost for an accurate access log.
+	handler := api.SecurityHeaders(api.CORS(api.Recover(api.MaxBytes(routes(), maxBodyBytes))))
 
 	addr := ":" + os.Getenv("PORT")
 	slog.Info("starting server", "addr", addr, "apiVersion", api.APIVersion)
@@ -46,6 +50,9 @@ func routes() *http.ServeMux {
 	mux.Handle("GET /v1/health", api.HealthHandler())
 	mux.Handle("POST /v1/solve", api.SolveHandler())
 	mux.Handle("POST /v1/generate", api.GenerateHandler())
+	// GET / serves the embedded SPA. The /v1 patterns above are more specific and win; this is
+	// the catch-all for GET, so index.html and its assets (app.js, style.css) resolve here.
+	mux.Handle("GET /", api.UIHandler())
 	return mux
 }
 

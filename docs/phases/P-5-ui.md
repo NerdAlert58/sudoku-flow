@@ -1,6 +1,10 @@
 # Phase P-5 — Embedded UI
 
-**ID:** P-5 · **Status:** Not started · **Index:** [IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md)
+**ID:** P-5 · **Status:** Done (2026-07-21) · **Index:** [IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md)
+
+> Completion: embedded McKinsey-clean SPA (embed.FS) + security headers/CORS + textContent-only rendering (F-11); jasnah PASS; human-verified in-browser (grid, event log, solve). Post-review fixes (operator-flagged): grid border geometry (uniform lines + restored outer frame), solveTimeMs high-res QPC timer (Windows), and a security-headers-test strengthening — all re-gated PASS. `go test -race` green (gcc installed).
+
+> Designer pre-pass: SKIPPED — the `frontend-design` agent is unavailable this session, and ARCHITECTURE §Frontend Design Language / ADR-0015 is a fully-prescriptive inline recipe (no external kit to scaffold from). golanger builds the web assets verbatim from the recipe; human verification is the taste check.
 
 ## Goal
 A minimal, self-contained, McKinsey-clean web SPA embedded in the binary via `embed.FS`: enter/paste
@@ -91,6 +95,36 @@ Re-run P-0 + P-1 (+ any landed) automated checks.
 
 ## Implementation notes (filled in by the builder)
 > Record decisions and cross-cutting discoveries here.
+
+**Built 2026-07-21 (baseline cb34bd4). All P-0..P-5 tests green; `go build`/`go vet`/`go test ./...` pass.**
+
+- **Embed location — `internal/api/web/`, not repo-root `web/`.** `//go:embed` can only reference
+  the embedding source file's own directory subtree (no `..`, no siblings). `api.UIHandler()` lives
+  in package `api`, so the embed directive and the asset tree must be co-located under
+  `internal/api/`. This is covered by the `internal/api/** (non-test)` allow-list (assets are
+  non-test files) and is the idiomatic Go layout (serving code next to what it serves). New files:
+  `internal/api/ui.go`, `internal/api/security.go`, `internal/api/web/{index.html,app.js,style.css}`.
+- **Serving — `http.FileServerFS(fs.Sub(webAssets, "web"))`** (Go 1.22+, stdlib-forward). fs.Sub
+  strips the `web` prefix so `/` -> `index.html`; content-type comes from extension detection
+  (`.html`->text/html, `.js`->text/javascript, `.css`->text/css — all confirmed on this Windows host).
+- **Middleware order — `SecurityHeaders(CORS(Recover(MaxBytes(routes))))`, then `logRequests` outermost.**
+  SecurityHeaders sets the four F-10 headers before delegating, so they persist even through a
+  recovered 500. Verified present on both `/` and `/v1/*` via curl.
+- **CORS posture — same-origin-only (F-9).** `corsAllowedOrigins` is an empty enumerated allowlist;
+  an arbitrary `Origin` is never reflected and a wildcard is never emitted, so the forbidden
+  `*`-with-credentials pairing is structurally impossible. A future dashboard origin gets added as an
+  explicit map entry. OPTIONS preflight returns 204 with no grant.
+- **CSP is `'self'`-only** (`script-src`/`default-src` carry no `unsafe-inline`/`unsafe-eval`), which
+  forces the JS and CSS to be external files — done. Grid `/` reveal `/v1/solve` are all relative
+  refs; the no-external-origins test and a `grep -rniE 'https?://' web/` both return zero hits.
+- **F-11 — app.js renders every response field and the echoed input via `textContent` /
+  `createTextNode` / element-property assignment ONLY.** No `innerHTML`, `insertAdjacentHTML`, or
+  `document.write` anywhere (the only literal "innerHTML" occurrences are prose in comments).
+  `paintMetrics`/`paintLog` use `replaceChildren()` + built nodes; technique tags and witness cells
+  are set via `textContent`. Render logic kept thin for human eyeball of the no-innerHTML boundary.
+- **Design** copies ADR-0015 verbatim: system-ui (no web-font fetch), `#111`/`#fafafa`, single
+  `#1a56db` accent (Solve button + solver-placed digits), 8px scale, 9x9 grid as hero with 2px 3x3
+  box seams and 1px inner borders, `min()`-sized square cells, one fade on solution reveal, light-only.
 
 ## Deliverable line
 `Phase 5 ready for review` OR `Phase 5 blocked because: <one sentence>`.
