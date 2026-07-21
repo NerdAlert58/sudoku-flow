@@ -8,3 +8,4 @@
 | P-3 | 07e1daa | 2026-07-21 | Puzzle generator (symmetry + backtracking uniqueness counter + graded digger) + POST /v1/generate | — |
 | P-5 | cb34bd4 | 2026-07-21 | Embedded McKinsey-clean SPA + security headers/CORS + high-res solveTimeMs (QPC) | — |
 | P-4 | b10fa08 | 2026-07-21 | Batch validate (goroutine-per-puzzle) + intra-puzzle parallelism negative result; -race gate live | — |
+| P-6 | 42de783 | 2026-07-21 | CI/CD wiring + manual Vercel deploy; CI verified green on PR #1 (all 5 gates) | — |
