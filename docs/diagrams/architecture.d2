@@ -1,0 +1,49 @@
+# sudoku-flow architecture — render:
+#   d2 --layout=elk -t 1 docs/diagrams/architecture.d2 docs/diagrams/architecture.svg
+# config: layout=elk, theme=1 (neutral), sketch=off
+
+clients: {
+  label: "Clients\ncurl · embedded UI · future React dashboard"
+  shape: rectangle
+}
+
+server: {
+  label: "cmd/server/main.go\nServeMux on $PORT · slog · serves web/ at /"
+  shape: rectangle
+}
+
+api: {
+  label: "internal/api\nhandlers + contract.go + {error,code} envelope"
+  shape: rectangle
+}
+
+sudoku: {
+  label: "internal/sudoku\nparse + validate · Grid / Candidates\n(TRUST BOUNDARY)"
+  shape: rectangle
+}
+
+solver: {
+  label: "internal/solver\ncheapest-first ladder · []Event · metric quartet\nstatus: solved|stalled|unsolvable"
+  shape: rectangle
+}
+
+generator: {
+  label: "internal/generator\nsymmetry xform + digger\n+ BACKTRACK uniqueness counter"
+  shape: rectangle
+}
+
+result: {
+  label: "SolveResult / BatchResult JSON\n(/v1 contract, apiVersion)"
+  shape: document
+}
+
+clients -> server: "HTTP /v1 (untrusted 81-char string)"
+server -> api: "route"
+api -> sudoku: "Parse(string) -> Grid"
+api -> solver: "SolveRequest -> SolveResult"
+api -> generator: "GenerateRequest -> GeneratedPuzzle"
+generator -> solver: "uses as difficulty + uniqueness oracle"
+sudoku -> solver: "Grid / Candidates"
+api -> result: "batch: 1 goroutine/puzzle (own Grid copy)"
+solver -> result: "SolveResult{status, solution, events[], quartet}"
+result -> clients: "JSON response"
