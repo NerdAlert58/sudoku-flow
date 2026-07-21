@@ -1,6 +1,8 @@
 # Phase P-1 — Solver core & singles
 
-**ID:** P-1 · **Status:** Not started · **Index:** [IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md)
+**ID:** P-1 · **Status:** Done (2026-07-20) · **Index:** [IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md)
+
+> Completion: build/vet/test green; all 25 seeds solve to oracle; replay (AC-3) proves no-backtracking for BOTH singles (jasnah mutation-tested the fix); test-verifier PASS after hidden-single coverage backfill; leanness advisory-only. `-race` deferred to CI.
 
 ## Goal
 A working constructive solver for the singles tier wired to `POST /v1/solve`: it solves all 25 seed
@@ -96,6 +98,37 @@ Re-run P-0 automated checks (`go build`, `go vet`, health-handler + parse tests)
 
 ## Implementation notes (filled in by the builder)
 > Record decisions and cross-cutting discoveries here; propagate upward as needed.
+
+**Built 2026-07-20 (baseline 9acc0ca, branch phase/p-1-solver-core). All checks green.**
+
+New source (allow-list only): `internal/solver/solver.go` (types + `Solve`), `internal/api/solve.go`
+(`SolveHandler` + contract mapping), `cmd/server/main.go` (registered `POST /v1/solve`).
+`contract.go` untouched; no test files, go.mod, or P-0 code modified.
+
+- **Loop shape (ADR-0007/0012):** one `Solve` main-loop pass = one Iteration = recompute all
+  candidates from the current board → contradiction check → apply the FIRST naked single (cells
+  row-major) else the FIRST hidden single (units row-major: rows, then cols, then boxes; digits
+  ascending), then re-sweep. At most one placement per pass keeps the pass boundary crisp and the
+  whole path deterministic with no maps/goroutines (AUDIT P2). `Iterations` = passes,
+  `CandidateChecks` = per-pass empty-cell inspections in `computeCandidates`; both >0 on a real
+  solve. `EventCount == len(Events)`.
+- **No-backtracking proof (AC-3, load-bearing):** candidates are recomputed from scratch each pass
+  by the same row/col/box legality the test's `nakedForced`/`hiddenForced` use, so every emitted
+  placement is mechanically forced by its named technique at its pre-state. The replay test passes
+  for all 25 seeds. Solver only ever PLACES in this tier — `Eliminations` is always empty.
+- **`SolveTimeMs` split (ADR-0007/P3):** `Solve` leaves it 0; the handler measures wall-clock
+  (`time.Since`, µs→ms) around the `Solve` call only, excluding transport. This is what keeps the
+  determinism ACs coherent — byte-identity covers the event log + three counters, never the clock.
+- **Status (ADR-0011):** `Solve` returns solved/stalled/unsolvable only. `invalid_input` is NOT a
+  solver status — the handler rejects malformed/rule-violating givens at `sudoku.Parse` with
+  HTTP 400 + `ErrorResponse{Code:"invalid_input"}`, upstream of the solver (per the test's contract
+  note and ARCHITECTURE §Summary). Empty grid → stalled; in-tier zero-candidate cell → unsolvable.
+- **F-12 content-type:** validated with `mime.ParseMediaType` BEFORE the body is read; anything but
+  `application/json` (a `; charset=...` suffix is fine), including a missing header, → HTTP 415.
+- **Determinism verified:** `-race` cannot run on this host (no C compiler); ran plain
+  `go test ./...` green. CI runs `-race` on Linux (P-6). No shared mutable state, so no data race
+  is structurally possible in the solve path.
+- **No deviations from the frozen plan or the tests.**
 
 ## Deliverable line
 `Phase 1 ready for review` OR `Phase 1 blocked because: <one sentence>`.

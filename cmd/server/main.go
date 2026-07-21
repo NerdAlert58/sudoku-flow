@@ -39,11 +39,12 @@ func run() error {
 	return http.ListenAndServe(addr, logRequests(handler))
 }
 
-// routes registers the /v1 endpoints. Only health is wired in P-0; solve, generate, and
+// routes registers the /v1 endpoints. Health and solve are wired through P-1; generate and
 // validate-batch land in later phases against the already-frozen contract types.
 func routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /v1/health", api.HealthHandler())
+	mux.Handle("POST /v1/solve", api.SolveHandler())
 	return mux
 }
 
