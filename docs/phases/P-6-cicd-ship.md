@@ -1,6 +1,8 @@
 # Phase P-6 — CI/CD & Ship
 
-**ID:** P-6 · **Status:** In progress (started 2026-07-21, baseline 42de783) · **Index:** [IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md)
+**ID:** P-6 · **Status:** Done (2026-07-21) · **Index:** [IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md)
+
+> Completion: CI/CD wiring authored + govulncheck clean + all actions SHA-pinned. **AC-2 VERIFIED on a real PR** — CI run 29845573253 (PR #1) Success, all 5 gates green (vet/build/test-race/coverage≥80%/govulncheck). Deploy is manual-gated (workflow_dispatch + `production` environment). Operator-completion steps (documented in README): Vercel token + GitHub secrets, branch-protection required-checks, `production` required-reviewer rule, then trigger the manual deploy.
 
 > Pre-gate piece (CI/CD wiring + docs; no new app tests — the CI workflow runs the existing suite). Test-coverage gate (5.0/5b.6/5b.7) skipped. Some ACs (real CI run, deploy) require human-only external setup (Vercel token, GitHub secrets, branch protection).
 
