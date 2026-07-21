@@ -45,14 +45,14 @@
   Phase 5b.4).
 
 <!-- BEGIN nerdflow-status -->
-## Current status (generated 2026-07-21T14:35:40Z, baseline dfabdf7)
+## Current status (generated 2026-07-21T15:23:29Z, baseline dc71b13)
 > Derived from artifact presence + phase completion. If this disagrees with the
 > files, **the files win** — re-run the relevant nerdflow skill to refresh.
 
 - **Stage:** build in progress
 - **Frozen now:** PRD.md, AUDIT.md, USERS.md, ARCHITECTURE.md, DESIGN_DECISIONS.md, EVAL.md, SECURITY.md, COMPLIANCE.md, IMPLEMENTATION_PLAN.md + docs/phases/
 - **Mutable now:** piece `Status:` fields and `## Implementation notes` (during build); `docs/sessions/*` are append-only
-- **Build:** 5 session log(s); 1 build-time ADR amendment(s) promoted
+- **Build:** 6 session log(s); 1 build-time ADR amendment(s) promoted
 <!-- END nerdflow-status -->
 
 ## Role bindings
