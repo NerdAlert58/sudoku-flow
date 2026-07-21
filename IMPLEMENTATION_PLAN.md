@@ -10,7 +10,7 @@
 
 | ID | Title | Goal | Depends on | Status | Brief |
 |---|---|---|---|---|---|
-| P-0 | Scaffold & contracts | Runnable server shell: module, layout, grid model + validation (trust boundary), `/v1` contract types, `/v1/health` | — | Not started | [P-0](docs/phases/P-0-scaffold.md) |
+| P-0 | Scaffold & contracts | Runnable server shell: module, layout, grid model + validation (trust boundary), `/v1` contract types, `/v1/health` | — | Done (2026-07-20) | [P-0](docs/phases/P-0-scaffold.md) |
 | P-1 | Solver core & singles | Solve loop + event log + metric quartet + three-status decision + naked/hidden singles; `POST /v1/solve` solves all 25 seed puzzles, replay-proven | P-0 | Not started | [P-1](docs/phases/P-1-solver-core.md) |
 | P-2 | Advanced ladder & fixtures | Locked candidates → colouring; labeled per-technique fixture (≥3 each); difficulty grader | P-1 | Not started | [P-2](docs/phases/P-2-advanced-ladder.md) |
 | P-3 | Generator | Symmetry + backtracking uniqueness counter + digger + difficulty targeting; `POST /v1/generate` | P-2 | Not started | [P-3](docs/phases/P-3-generator.md) |
