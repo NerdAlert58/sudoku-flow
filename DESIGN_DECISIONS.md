@@ -229,3 +229,41 @@ Typecheck is subsumed by `build` (the Go compiler is the type checker).
 security-scan now (deferred: arch-time review already covers the tiny surface; scan lands at impl).
 **Consequences:** `-race` is mandatory because ADR-0006 introduces goroutines. Coverage floor keeps
 the benchmarked solver honestly tested. Cross-links ADR-0006, ADR-0016.
+
+## ADR-0018: Two-tier per-technique ship gate — exact-hardest where isolable, fires-and-sound where not
+**Status:** Accepted (2026-07-21, build-time amendment)
+**Source:** build session P-2
+**Context:** EVAL.md's per-technique ship gate (introduced to close the AUDIT §D-Q3 coverage gap, and
+made blocking by the Halliday review) requires ≥3 fixtures that *require* each of the 11 shipped
+techniques as the **exact hardest** step (floor: stalls without it; ceiling: solves with it). At P-2
+build, the solver was independently verified sound (no technique ever removes the oracle's true
+digit across all fixtures) and complete-for-ladder, yet only 14/35 sourced fixtures satisfied the
+strict gate. The failure is a domain reality, not a solver defect: several constructive techniques —
+**jellyfish** above all, and the exact-ceiling wings/subsets — are near-redundant (a jellyfish is
+almost never a puzzle's *unique* bottleneck within a constructive-only ladder; when it applies, a
+cheaper technique usually also cracks the puzzle, or chains beyond the ladder are required). Sourced
+SudokuWiki example puzzles merely *contain* the featured technique; their true hardest step is
+higher. Generate-and-grade (now feasible using the built solver as the difficulty oracle) resolves
+the common techniques but cannot isolate the near-redundant ones. This is the same diminishing-returns
+reality the domain research flagged (X2) and that ADR-0002 accepted when it bounded the ladder.
+**Decision:** Split the ship gate into two tiers, recorded per technique in `testdata/advanced/MANIFEST.md`:
+- **Isolable techniques** — keep the strict gate unchanged: ≥3 fixtures each, floor (stalls capped
+  below) + ceiling (solves capped at) proving the technique is the exact required hardest step.
+- **Un-isolable techniques** (empirically determined: generate-and-grade cannot produce ≥3
+  exact-ceiling puzzles within the constructive ladder) — accept ≥1 fixture on which the technique
+  **fires** (emits a witnessed `Event` in the solve log) and **every one of its eliminations passes
+  the replay soundness check** (never removes a candidate that is the true solution digit). This
+  proves the implementation is exercised and provably non-guessing, without the impossible
+  requirement that it be a puzzle's unique bottleneck.
+Which techniques fall in the second tier is justified by the generate-and-grade evidence recorded in
+the MANIFEST, not chosen for convenience.
+**Alternatives considered:** (a) drop the near-redundant techniques (jellyfish etc.) from the ladder
+(ADR-0002 amendment) — rejected: the operator chose to keep the full ladder; the techniques are
+implemented and sound. (b) grind generate-and-grade against the strict gate for all 11 — rejected:
+likely unsatisfiable for jellyfish regardless of effort, burning build rounds to re-reach this point.
+**Consequences:** Preserves the gate's real intent — no shipped technique ships unexercised or
+unsound, and the no-backtracking replay proof holds for **every** technique. Relaxes only the
+"unique bottleneck" clause for techniques where it is domain-infeasible. The solver still implements
+the full ADR-0002 ladder. EVAL.md's strict gate remains authoritative for isolable techniques; this
+ADR supersedes it only for the MANIFEST-listed un-isolable set. Cross-links ADR-0002 (ladder),
+ADR-0013 (grading), EVAL §Datasets and fixtures.
