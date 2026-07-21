@@ -1,0 +1,43 @@
+# Manual-gated Vercel production deploy (ADR-0016; ARCHITECTURE.md §CI/CD topology §Deploy
+# topology). No auto-deploy on merge: the only trigger is the manual workflow_dispatch button.
+# The `production` GitHub Environment carries the secrets and a required-reviewer protection
+# rule (configured by the operator), so the job pauses for human approval before it runs.
+# Every action is pinned to a full 40-char commit SHA (SECURITY.md F-15). No
+# pull_request_target; secrets are never exposed to untrusted-input triggers.
+name: deploy
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Gates the job behind the production Environment's required-reviewer rule and scopes
+    # the Vercel secrets to this environment (SECURITY.md F-15: project-scoped, env-guarded).
+    environment: production
+    env:
+      # Vercel CLI reads these from the environment when linking the project.
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '22'
+      - name: Install Vercel CLI
+        run: npm i -g vercel
+      - name: Pull Vercel project settings (production)
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Build (production)
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy prebuilt (production)
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

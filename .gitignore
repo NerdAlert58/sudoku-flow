@@ -16,3 +16,6 @@ go.work.sum
 .DS_Store
 .idea/
 .vscode/
+
+# Vercel CLI (local link + prebuilt output)
+.vercel/
