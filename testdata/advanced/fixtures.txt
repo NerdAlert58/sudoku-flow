@@ -1,0 +1,76 @@
+# Labeled per-technique advanced fixtures — ADR-0018 TWO-TIER ship gate.
+# One record per line, pipe-delimited:
+#
+#   technique | tier | band | puzzle(81) | solution(81) | source
+#
+# - technique: the canonical Event.Technique string this fixture proves.
+# - tier (ADR-0018):
+#     isolable   — the technique is the EXACT hardest required step. Proven at build time by the
+#                  FLOOR test (capping at the predecessor does NOT solve) + the CEILING test
+#                  (capping at the technique DOES solve). >= 3 per technique (the strict gate).
+#     unisolable — the technique FIRES (emits a witnessed Event in the full Solve log) and every one
+#                  of its eliminations is replay-sound (never removes the oracle's true digit). Used
+#                  only where generate-and-grade cannot produce 3 exact-ceiling puzzles within the
+#                  constructive ladder. >= 1 per technique. See MANIFEST.md for the evidence.
+# - band: the ADR-0013 band of `technique` (bandOf[technique]). For unisolable fixtures the puzzle's
+#   overall grade may be HIGHER (a costlier technique is the true bottleneck); the tests require only
+#   that it is not cheaper.
+# - solution: the unique brute-force-oracle solution (EVAL §Ground-truth process).
+#
+# EVERY fixture below was machine-verified by the built solver used as the difficulty oracle:
+# exactly 81 chars, parses (no duplicate given), UNIQUE (brute-force solution count == 1), and its
+# label backed by the solver's grading (floor+ceiling for isolable; fires+replay-sound for
+# unisolable). Regenerated at P-2 build (ADR-0018) — the prior SudokuWiki-sourced labels were
+# provenance-only and 21/35 graded to a different hardest technique; those were re-labeled to their
+# TRUE hardest or replaced by generate-and-grade puzzles.
+
+# --- hidden_single (isolable) ---------------------------------------------------------------
+hidden_single|isolable|Easy|000700008030009650000000000010008000600010000750406009100097065803000200000002180|261754938437189652985623471319278546648915723752436819124897365873561294596342187|constructed:dig-from-oracle; solver-graded exact hidden_single (floor+ceiling)
+hidden_single|isolable|Easy|730000000064050700900000010800500000300800029050029080000308000000100005601070000|738416952164952738925783416892531647316847529457629183549368271273194865681275394|constructed:dig-from-oracle; solver-graded exact hidden_single (floor+ceiling)
+hidden_single|isolable|Easy|000036710100080000700000403090010000000000040031000029600500900500001000042000060|984236715153487692726159483297814356865392147431765829618523974579641238342978561|constructed:dig-from-oracle; solver-graded exact hidden_single (floor+ceiling)
+# --- locked_candidates_pointing (isolable) --------------------------------------------------
+locked_candidates_pointing|isolable|Medium|104009600000037005030001002401650000050000840003100000800705000000000200000040580|174529638628437195935861472491658723756392841283174956842715369567983214319246587|constructed:dig-from-oracle; solver-graded exact locked_candidates_pointing (floor+ceiling)
+locked_candidates_pointing|isolable|Medium|340009601000006000000002085004000000679008000000500006806040000010003000200000079|345879621982156347761432985524967813679318254138524796896745132417293568253681479|constructed:dig-from-oracle; solver-graded exact locked_candidates_pointing (floor+ceiling)
+locked_candidates_pointing|isolable|Medium|090050080005007090300004702040000038803000000006003900000200000000000201084690500|792356184415827396368914752941572638873169425526483917137245869659738241284691573|constructed:dig-from-oracle; solver-graded exact locked_candidates_pointing (floor+ceiling)
+# --- locked_candidates_claiming (isolable) --------------------------------------------------
+locked_candidates_claiming|isolable|Medium|000940560000001000204060000000100259700002800000000004010000000007000906300290041|871943562563721498294568137638174259749652813152839674916487325427315986385296741|constructed:dig-from-oracle; solver-graded exact locked_candidates_claiming (floor+ceiling)
+locked_candidates_claiming|isolable|Medium|000008000016937000009060005080009000400001002020006050003000020090000604008070009|274518396516937248839462175385729461467351982921846753153694827792185634648273519|constructed:dig-from-oracle; solver-graded exact locked_candidates_claiming (floor+ceiling)
+locked_candidates_claiming|isolable|Medium|086010000703080004100050680000000000000040021007800000028930400030007010000000200|986314572753286194142759683364172958895643721217895346528931467639427815471568239|constructed:dig-from-oracle; solver-graded exact locked_candidates_claiming (floor+ceiling)
+# --- naked_subset (isolable) ----------------------------------------------------------------
+naked_subset|isolable|Medium|040000080000002300260805000070000000000296000008700059000000040100040702009300000|345169287891472365267835194973584621514296873628713459732651948156948732489327516|constructed:dig-from-oracle; solver-graded exact naked_subset (floor+ceiling)
+naked_subset|isolable|Medium|600407301020005080100060700007300000900000830400000007000000000278100006004500100|689427351723915684145863729857391462912746835436258917591684273278139546364572198|constructed:dig-from-oracle; solver-graded exact naked_subset (floor+ceiling)
+naked_subset|isolable|Medium|005009000030520100010008030070000000082070000000056200004007009000000080600490003|265319847837524196419768532176243958582971364943856271354187629791632485628495713|constructed:dig-from-oracle; solver-graded exact naked_subset (floor+ceiling)
+# --- hidden_subset (isolable) ---------------------------------------------------------------
+hidden_subset|isolable|Medium|300000100100023854000070002070000045600800000004009200000002010009050000000498000|352984167197623854846571932978216345623845791514739286785362419439157628261498573|constructed:dig-from-oracle; solver-graded exact hidden_subset (floor+ceiling)
+hidden_subset|isolable|Medium|005600400001000053080009000008004020000080005030265000000030802000000040000020107|395612478261847953784359261658174329472983615139265784517436892823791546946528137|constructed:dig-from-oracle; solver-graded exact hidden_subset (floor+ceiling)
+hidden_subset|isolable|Medium|008170000060003000907005003000790000000002500003000860051080020000060000820007000|438176295562943187917825643645798312189632574273514869751389426394261758826457931|constructed:dig-from-oracle; solver-graded exact hidden_subset (floor+ceiling)
+# --- x_wing (isolable) ----------------------------------------------------------------------
+x_wing|isolable|Hard|001900800804000001900070000000003000080100090700080206000000500000530070042060000|231946857874352961956871324425693718683127495719485236367218549198534672542769183|constructed:dig-from-oracle; solver-graded exact x_wing (floor+ceiling)
+x_wing|isolable|Hard|050000803160005000007090050800001000001000940700008100004000005000000207000030094|459172863163485729287693451896341572321756948745928136674219385938564217512837694|constructed:dig-from-oracle; solver-graded exact x_wing (floor+ceiling)
+x_wing|isolable|Hard|000060005000905100040010037095070000600001040100000000053000000027390050900000200|319764825782935164546812937295473618678251349134689572453128796827396451961547283|constructed:dig-from-oracle; solver-graded exact x_wing (floor+ceiling)
+# --- swordfish (isolable) -------------------------------------------------------------------
+swordfish|isolable|Hard|500010003006003002003200000002300076000050000190007500000009400200800600900040005|529418763716593842843276159452381976637954218198627534385169427274835691961742385|sudokuwiki/Sword_Fish_Strategy; solver-graded exact swordfish (floor+ceiling)
+swordfish|isolable|Hard|020040069003806200060020000890500010000000000030001026000010070009604300270050090|528143769713896245964725831892567413651432987437981526345219678189674352276358194|sudokuwiki/Sword_Fish_Strategy; solver-graded exact swordfish (floor+ceiling)
+swordfish|isolable|Hard|020000000008020106900708040006030000500070400030200600400000090009400070010900200|623541789748329156951768342176834925592176438834295617487612593269453871315987264|isomorph-transform of curated swordfish; solver-graded exact swordfish (floor+ceiling)
+# --- xy_wing (isolable) ---------------------------------------------------------------------
+xy_wing|isolable|Hard|000000100014207600000000002000000300006043071000170000072060000500080020000004038|628439157914257683357816492781692345296543871435178269872365914543981726169724538|constructed:dig-from-oracle; solver-graded exact xy_wing (floor+ceiling)
+xy_wing|isolable|Hard|080006040970000000040000003002100700000005060030000058000004200000500007005092010|583276941971453826246819573652148739718935462439627158197364285324581697865792314|constructed:dig-from-oracle; solver-graded exact xy_wing (floor+ceiling)
+xy_wing|isolable|Hard|000204100400000000000300050203009060007006003001570200085000006000800002700090000|538264197416957328972318654253489761897126543641573289385742916169835472724691835|constructed:dig-from-oracle; solver-graded exact xy_wing (floor+ceiling)
+# --- xyz_wing (isolable) --------------------------------------------------------------------
+xyz_wing|isolable|Expert|002007030000400506908000000670020300080000600019004000700005002000906400004000000|542867139137492586968513247675128394483759621219634758796345812321986475854271963|constructed:dig-from-oracle; solver-graded exact xyz_wing (floor+ceiling)
+xyz_wing|isolable|Expert|000204060001000400080050001905740020007020000030008000000001007060000090120300000|573214968691837452482956731915743826847625319236198574359461287764582193128379645|constructed:dig-from-oracle; solver-graded exact xyz_wing (floor+ceiling)
+xyz_wing|isolable|Expert|010000906086003000503000084000800000000000720008301000000070060400005010050030009|714582936986413257523769184695827341341956728278341695839174562467295813152638479|constructed:dig-from-oracle; solver-graded exact xyz_wing (floor+ceiling)
+# --- w_wing (isolable) ----------------------------------------------------------------------
+w_wing|isolable|Expert|600400850000700001000060007001000700720006090000000000904010580100035000030008010|673421859245789631819563247451392768728156394396874125964217583182935476537648912|constructed:dig-from-oracle; solver-graded exact w_wing (floor+ceiling)
+w_wing|isolable|Expert|000120000050000020008000003420000050000000640600380000510900060700803410004000000|347129586156738924298465173429671358831592647675384291513947862762853419984216735|constructed:dig-from-oracle; solver-graded exact w_wing (floor+ceiling)
+w_wing|isolable|Expert|010030207070000100300009000060400780524000000000100005043000502000054000000000001|419638257678542139352719864961425783524387916837196425743861592196254378285973641|constructed:dig-from-oracle; solver-graded exact w_wing (floor+ceiling)
+# --- simple_colouring (isolable) ------------------------------------------------------------
+simple_colouring|isolable|Expert|004002000000400302960810000000000003200790010091000500348000001100020700000100000|834572196517469382962813457475681923283795614691234578348957261156328749729146835|constructed:dig-from-oracle; solver-graded exact simple_colouring (floor+ceiling)
+simple_colouring|isolable|Expert|008060094000000001005840700600005900050000000104009007000400200300007800000090060|278561394463972581915843726632715948759684132184329657891436275346257819527198463|constructed:dig-from-oracle; solver-graded exact simple_colouring (floor+ceiling)
+simple_colouring|isolable|Expert|050000210080060400000200700000002030006030000078000000200004850000790000001800900|457983216182567493693241785914672538526438179378159642269314857845796321731825964|constructed:dig-from-oracle; solver-graded exact simple_colouring (floor+ceiling)
+# --- jellyfish (UN-ISOLABLE, ADR-0018) ------------------------------------------------------
+# 0 exact-ceiling jellyfish puzzles found in ~4,500 graded minimal puzzles (jellyfish is
+# near-redundant in a constructive-only ladder — a cheaper technique or an above-tier chain almost
+# always co-occurs). These fixtures instead prove jellyfish FIRES + is replay-sound. See MANIFEST.md.
+jellyfish|unisolable|Hard|000400090050230000083000000600500200301070000000008700206005300000000000700300906|162487593457239861983651472678543219341972658529168734296815347834796125715324986|constructed:dig-from-oracle; full Solve log contains a jellyfish Event, every elim replay-sound (un-isolable, ADR-0018)
+jellyfish|unisolable|Hard|000080060600700920070004000500000000000000100160208000820560000050030006000000074|231985467648713925975624813587149632492376158163258749824567391759431286316892574|isomorph-transform; full Solve log contains a jellyfish Event, every elim replay-sound (un-isolable, ADR-0018)

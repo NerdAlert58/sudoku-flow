@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sudoku-flow</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="head">
+      <h1>sudoku&#8202;flow</h1>
+      <p class="sub">Paste or type an 81-character puzzle, then solve.</p>
+    </header>
+
+    <section class="panel" aria-label="Puzzle input">
+      <div id="grid" class="grid" aria-label="Sudoku grid"></div>
+      <div class="controls">
+        <button id="solve" class="btn" type="button">Solve</button>
+        <button id="clear" class="btn btn-ghost" type="button">Clear</button>
+        <span id="status" class="status" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section id="result" class="result" aria-label="Solution" hidden>
+      <div class="metrics" id="metrics"></div>
+      <details id="log-wrap" class="log-wrap">
+        <summary>Technique event log (<span id="event-count">0</span>)</summary>
+        <ol id="log" class="log"></ol>
+      </details>
+    </section>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

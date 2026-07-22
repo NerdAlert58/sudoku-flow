@@ -1,0 +1,21 @@
+# Build output
+/server
+/sudoku-flow
+*.exe
+
+# Test / coverage artifacts
+cover.out
+coverage.lcov
+*.test
+
+# Go workspace
+go.work
+go.work.sum
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Vercel CLI (local link + prebuilt output)
+.vercel/

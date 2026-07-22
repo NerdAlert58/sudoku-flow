@@ -1,0 +1,25 @@
+# Status-coverage fixtures (EVAL.md §Datasets and fixtures — status coverage; ADR-0011).
+# Pipe-delimited:  category | expected_status | puzzle(81) | note
+#
+# Categories that produce a solver STATUS from a PARSEABLE grid live here. The fourth AC-5
+# category, invalid_input, is exercised inline in status_coverage_test.go (those grids do NOT
+# parse, so they never reach the solver — invalid_input is decided at sudoku.Parse, ADR-0011).
+#
+#   above_tier_stalled  -> stalled     : valid, UNIQUE, but its hardest required technique is a
+#                                        forcing chain / ALS above the ADR-0002 tier, so the
+#                                        constructive solver honestly stalls (ADR-0001/0002).
+#                                        PROVISIONAL: the label rests on published provenance;
+#                                        build-time confirms these stall against the full tier.
+#   non_unique          -> stalled     : >=2 solutions (brute-force verified). ADR-0011: the
+#                                        solver returns STALLED (never unsolvable) for non-unique.
+#   in_tier_unsolvable  -> unsolvable  : a cell is driven to ZERO candidates by the givens — an
+#                                        in-tier constructive contradiction the solver reaches.
+above_tier_stalled|stalled|800000000003600000070090200050007000000045700000100030001000068008500010090000400|Arto Inkala 2012 "world's hardest"; unique (oracle-verified); requires chains beyond tier
+above_tier_stalled|stalled|000000012000000003002300400001800005060070800000009000008500000900040500470006000|Platinum Blonde; unique (oracle-verified); requires chains beyond tier
+above_tier_stalled|stalled|000000039000001005003050800008090006070002000100400000009080050020000600400700000|Golden Nugget; unique (oracle-verified); requires chains beyond tier
+non_unique|stalled|060072008002800150890016047008609500520480073014003802900240360083067005206100780|constructed; brute-force solution count >= 2; expected stalled (ADR-0011)
+non_unique|stalled|040039006500600940093008001300850090068002300400390018004703800830015067006900130|constructed; brute-force solution count >= 2; expected stalled (ADR-0011)
+non_unique|stalled|004500600200600450760040090078024005003007906900100700480360070020019043007005009|constructed; brute-force solution count >= 2; expected stalled (ADR-0011)
+in_tier_unsolvable|unsolvable|012345678900000000000000000000000000000000000000000000000000000000000000000000000|R0C0 sees 1..8 (row 0) + 9 (col 0) -> zero candidates; in-tier contradiction
+in_tier_unsolvable|unsolvable|012345678090000000000000000000000000000000000000000000000000000000000000000000000|R0C0 sees 1..8 (row 0) + 9 (box 0) -> zero candidates; in-tier contradiction
+in_tier_unsolvable|unsolvable|000090000000000000000000000000000000123405678000000000000000000000000000000000000|R4C4 sees 1..8 (row 4) + 9 (col 4) -> zero candidates; in-tier contradiction
