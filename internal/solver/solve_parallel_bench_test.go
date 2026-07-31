@@ -14,7 +14,9 @@ package solver_test
 // the negative result is a reproducible number in the build log, per ADR-0006.
 //
 // benchGrids is a bench-scoped loader (oracle_test.go's loadPuzzles takes *testing.T; a benchmark
-// only has *testing.B), CRLF-safe like the shipped loaders (D-Q1).
+// only has *testing.B), CRLF-safe like the shipped loaders (D-Q1). It loads the FULL graded corpus
+// (all 55 data lines across ORIGINAL + MEDIUM + HARD + VERY HARD, ADR-0019) — benchmarking the
+// whole difficulty range is the ADR-0006 intent — and skips '#' section headers and blank lines.
 
 import (
 	"os"
@@ -36,7 +38,9 @@ func benchGrids(b *testing.B) []sudoku.Grid {
 	var grids []sudoku.Grid
 	for _, line := range strings.Split(string(raw), "\n") {
 		line = strings.TrimRight(line, "\r")
-		if line == "" {
+		// Skip blank lines and '#' lines (tier-section headers + comments, ADR-0019) so a header
+		// never parses as a grid; the remaining data lines are the FULL graded corpus (all tiers).
+		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		g, err := sudoku.Parse(line)
@@ -51,7 +55,7 @@ func benchGrids(b *testing.B) []sudoku.Grid {
 	return grids
 }
 
-// BenchmarkSolveSequential measures the shipped single-threaded solver over the 25 seed grids.
+// BenchmarkSolveSequential measures the shipped single-threaded solver over the full graded corpus.
 func BenchmarkSolveSequential(b *testing.B) {
 	grids := benchGrids(b)
 	b.ResetTimer()
@@ -63,7 +67,7 @@ func BenchmarkSolveSequential(b *testing.B) {
 }
 
 // BenchmarkSolveIntraParallel measures the flagged intra-puzzle scan-parallel variant over the
-// SAME 25 seed grids. Compared against BenchmarkSolveSequential this is the ADR-0006 negative
+// SAME full graded corpus. Compared against BenchmarkSolveSequential this is the ADR-0006 negative
 // result: a sub-millisecond 9x9 solve cannot amortise goroutine overhead (AUDIT §P2).
 func BenchmarkSolveIntraParallel(b *testing.B) {
 	grids := benchGrids(b)

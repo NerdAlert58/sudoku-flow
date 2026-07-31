@@ -30,6 +30,10 @@ import (
 	"github.com/scottbushyhead/sudoku-flow/internal/api"
 )
 
+// loadSeed returns the 25 ORIGINAL (unlabeled) singles seed grids from the repo-root puzzles.txt.
+// The corpus is sectioned by tier with "# === NAME ===" headers (ADR-0019); the batch/handler AC
+// tests assert over exactly the singles seeds, so this returns ONLY the ORIGINAL section. Every
+// '#'-prefixed line (headers, comments) and blank line is non-data. CRLF-safe: right-trim \r.
 func loadSeed(t *testing.T) []string {
 	t.Helper()
 	path := filepath.Join("..", "..", "puzzles.txt")
@@ -38,8 +42,19 @@ func loadSeed(t *testing.T) []string {
 		t.Fatalf("reading seed puzzles at %s: %v", path, err)
 	}
 	var out []string
+	section := ""
 	for _, line := range strings.Split(string(raw), "\n") {
-		if line = strings.TrimRight(line, "\r"); line != "" {
+		line = strings.TrimRight(line, "\r")
+		if line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "#") {
+			if s := strings.TrimSpace(strings.TrimPrefix(line, "#")); strings.HasPrefix(s, "===") && strings.HasSuffix(s, "===") {
+				section = strings.TrimSpace(strings.Trim(s, "= "))
+			}
+			continue
+		}
+		if section == "ORIGINAL (unlabeled)" {
 			out = append(out, line)
 		}
 	}
