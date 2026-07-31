@@ -14,24 +14,70 @@ import (
 	"testing"
 )
 
-// loadPuzzles reads the 25 seed grids from the repo-root puzzles.txt (D-Q2: all 25 unique;
-// D-Q3: singles-only). CRLF-safe: each line is right-trimmed of \r and blank lines dropped,
-// so a CRLF-terminated .txt (D-Q1) parses without a caller-side trim.
-func loadPuzzles(t *testing.T) []string {
+// parseSections reads the repo-root puzzles.txt and groups its 81-char data lines by tier
+// section. The corpus is sectioned with "# === NAME ===" headers (ADR-0019); every '#'-prefixed
+// line and every blank line is non-data. CRLF-safe: each line is right-trimmed of \r, so a
+// CRLF-terminated .txt (D-Q1) parses without a caller-side trim. Returns section-name -> grids.
+func parseSections(t *testing.T) map[string][]string {
 	t.Helper()
 	path := filepath.Join("..", "..", "puzzles.txt")
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("reading seed puzzles at %s: %v", path, err)
 	}
-	var out []string
+	sections := make(map[string][]string)
+	cur := ""
 	for _, line := range strings.Split(string(raw), "\n") {
 		line = strings.TrimRight(line, "\r")
 		if line == "" {
 			continue
 		}
-		out = append(out, line)
+		if strings.HasPrefix(line, "#") {
+			if name, ok := sectionHeaderName(line); ok {
+				cur = name
+			}
+			continue
+		}
+		sections[cur] = append(sections[cur], line)
 	}
+	return sections
+}
+
+// sectionHeaderName extracts NAME from a "# === NAME ===" header, reporting false for any other
+// '#'-prefixed line (plain comments are skipped, not treated as section boundaries).
+func sectionHeaderName(line string) (string, bool) {
+	s := strings.TrimSpace(strings.TrimPrefix(line, "#"))
+	if !strings.HasPrefix(s, "===") || !strings.HasSuffix(s, "===") {
+		return "", false
+	}
+	name := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(s, "==="), "==="))
+	if name == "" {
+		return "", false
+	}
+	return name, true
+}
+
+// loadPuzzles returns the 25 ORIGINAL (unlabeled) singles seed grids from the repo-root
+// puzzles.txt (D-Q2: all 25 unique; D-Q3: singles-only). The corpus is sectioned by tier
+// (ADR-0019); this returns ONLY the ORIGINAL section, so the singles-tier acceptance proofs
+// (AC-1/AC-3/AC-4/AC-6 and the loadPuzzles(t)[0] callers) stay valid over exactly those 25.
+// Advanced tiers are loaded separately via loadAdvancedSeeds. CRLF-safe; headers/blanks skipped.
+func loadPuzzles(t *testing.T) []string {
+	t.Helper()
+	return parseSections(t)["ORIGINAL (unlabeled)"]
+}
+
+// loadAdvancedSeeds returns the 30 advanced seed grids — the concatenation of the MEDIUM, HARD,
+// and VERY HARD sections (ADR-0019), in that cheapest-first order. These fire ladder techniques
+// above the singles tier, so they are deliberately excluded from loadPuzzles and proven
+// no-backtracking by TestAdvancedSeeds_ReplayProvesNoBacktracking.
+func loadAdvancedSeeds(t *testing.T) []string {
+	t.Helper()
+	s := parseSections(t)
+	out := make([]string, 0, 30)
+	out = append(out, s["MEDIUM"]...)
+	out = append(out, s["HARD"]...)
+	out = append(out, s["VERY HARD"]...)
 	return out
 }
 

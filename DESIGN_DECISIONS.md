@@ -267,3 +267,36 @@ unsound, and the no-backtracking replay proof holds for **every** technique. Rel
 the full ADR-0002 ladder. EVAL.md's strict gate remains authoritative for isolable techniques; this
 ADR supersedes it only for the MANIFEST-listed un-isolable set. Cross-links ADR-0002 (ladder),
 ADR-0013 (grading), EVAL §Datasets and fixtures.
+
+## ADR-0019: Seed corpus sectioned by tier — singles ORIGINAL (25) frozen; advanced MEDIUM/HARD/VERY-HARD (30) added
+**Status:** Accepted (2026-07-31, post-build amendment)
+**Source:** post-ship benchmark-corpus growth
+**Context:** `puzzles.txt` served two roles at once: the D-Q3 **singles-only** acceptance fixture (every
+one of the 25 seeds solves by naked/hidden singles alone) and the project's solve-timing benchmark
+input. The load-bearing no-backtracking proof `TestAC3_Solver_ReplayFromInputProvesNoBacktracking`
+depends on the singles-only property directly — its replay `switch` accepts only `naked_single` /
+`hidden_single` and hard-fails (`default:`) on any advanced technique. Growing the corpus with harder
+puzzles (to benchmark the solver across difficulty tiers — the project's stated purpose) therefore
+could **not** simply append lines: advanced puzzles fire ladder techniques (locked candidates, pairs,
+X-wing, …) that AC-3's singles-tier proof rejects by design. D-Q3's "25 singles seeds" is a real
+invariant baked into AC-1/AC-3/AC-4/AC-6 and the api-layer AC tests, not a cosmetic label.
+**Decision:** Section `puzzles.txt` by tier with `# === NAME ===` headers and route tests by section:
+- **ORIGINAL (unlabeled) — 25 singles seeds:** unchanged and frozen. `loadPuzzles`/`loadSeed` return
+  exactly this section, so AC-1/AC-3/AC-4/AC-6 and the batch/handler ACs keep their `== 25` assertions
+  and singles-tier bodies verbatim. The D-Q3 proof is preserved intact, not rewritten.
+- **MEDIUM / HARD / VERY-HARD — 30 advanced puzzles:** generator-produced (`/v1/generate` at
+  medium/hard/expert), each verified 81-char, unique (D-Q2), and logic-solvable. Proven no-backtracking
+  by a new `TestAdvancedSeeds_ReplayProvesNoBacktracking` that routes each through the existing
+  `replayAdvancedProvesForced` helper (every placement forced, every elimination sound against the
+  brute-force oracle, solution == oracle) — the same proof the per-technique fixtures use (ADR-0018).
+All `puzzles.txt` loaders (`loadPuzzles`, `loadSeed`, `benchGrids`) skip `#`/blank lines so headers
+never parse as grids; the benchmark loader spans the full corpus.
+**Alternatives considered:** (a) rewrite AC-3 to accept all 13 techniques over a merged 55-puzzle set —
+rejected: collapses the clean singles-tier proof and changes the meaning of the load-bearing test for
+no benefit. (b) keep the 30 in a sibling `puzzles_extended.txt`, leaving `puzzles.txt` at 25 — viable
+and lower-churn, but the operator chose to grow the seed file itself; sectioning achieves that while
+keeping the singles proof frozen.
+**Consequences:** One corpus file now carries both tiers with test coverage that *strengthens* (advanced
+no-backtracking is now proven over 30 real graded puzzles, not only synthetic per-technique fixtures).
+D-Q3 remains authoritative for the ORIGINAL section. Cross-links ADR-0001/0012 (no-backtracking),
+ADR-0002 (ladder), ADR-0018 (advanced fires-and-sound proof), AUDIT §D-Q2/D-Q3, EVAL §Datasets and fixtures.
