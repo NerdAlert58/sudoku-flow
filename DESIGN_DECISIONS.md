@@ -300,3 +300,38 @@ keeping the singles proof frozen.
 no-backtracking is now proven over 30 real graded puzzles, not only synthetic per-technique fixtures).
 D-Q3 remains authoritative for the ORIGINAL section. Cross-links ADR-0001/0012 (no-backtracking),
 ADR-0002 (ladder), ADR-0018 (advanced fires-and-sound proof), AUDIT §D-Q2/D-Q3, EVAL §Datasets and fixtures.
+
+## ADR-0020: Vercel deploy via a serverless Handler adapter + public `app` package (corrects ADR-0009)
+**Status:** Accepted (2026-08-04, post-ship correction)
+**Source:** first real Vercel deploy
+**Context:** ADR-0009 assumed `@vercel/go` runs `cmd/server/main.go` as a long-lived Go server (the "Go
+server preset"). That premise is **false**, discovered on the first deploy. Two distinct failures:
+1. `@vercel/go` only builds **serverless functions** — it requires a file exporting
+   `func Handler(w http.ResponseWriter, r *http.Request)` and rejected `package main`/`func main()`
+   outright: *"Could not find an exported function in cmd/server/main.go"*. It never ran arbitrary servers.
+2. After adding an entrypoint, `@vercel/go` compiles it as a **module-less `command-line-arguments`
+   build**, so the entrypoint file **cannot import an `internal/` package**: *"use of internal package
+   … not allowed"*. Critically, a local `go build ./...` does **not** reproduce this — Go retains the
+   file's real module path locally — so the CI/build gates pass green while the Vercel build fails. Only
+   a real deploy exercises this path.
+**Decision:** Keep the "one codebase serves localhost and Vercel through one shared handler" intent, but
+implement it correctly:
+- **`api/index.go`** (`package handler`) — the serverless entrypoint exporting `func Handler(w, r)`,
+  delegating to a package-init-built `app.NewHandler()`. Imports **only the public `app` package**.
+- **`app` package** (public, in-tree) — exposes `NewHandler() http.Handler`, composing the full stack
+  (`logRequests → SecurityHeaders → CORS → Recover → MaxBytes → routes`), moved out of `package main`.
+  It imports `internal/api` for the leaf handlers + middleware — allowed, because `app` is a real in-tree
+  package (the `internal/` rule only bars the module-less entrypoint, not a normal package one hop down).
+- **`cmd/server/main.go`** — unchanged behavior; `run()` now builds via `app.NewHandler()` for local
+  `ListenAndServe`. `internal/api` leaf handlers/middleware are untouched.
+- **`vercel.json`** targets `api/index.go`.
+Behavior is byte-identical across both entrypoints (same middleware order, routes, access log, body cap).
+**Alternatives considered:** (a) run the binary as a server on Vercel — impossible; Vercel is
+serverless-only. (b) move all packages out of `internal/` so the entrypoint can import them directly —
+rejected: a large, invasive change to the frozen layout when a single thin public `app` package suffices.
+**Consequences:** The app deploys as a Vercel serverless function; the same code still runs as a local
+server via `cmd/server`. **Verified live** on the first successful deploy: `/v1/health` → 200,
+`/v1/solve` → solved, SPA served, at `https://sudoku-flow.vercel.app`. Standing caveat recorded: local
+Go builds cannot catch `@vercel/go`'s module-less `internal/` restriction — a real deploy is the only
+check for that class of change. Supersedes ADR-0009's deploy mechanism; cross-links ADR-0008 (stdlib
+routing), ADR-0016 (Vercel manual deploy).
