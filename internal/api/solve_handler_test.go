@@ -249,6 +249,36 @@ func TestAC5_Handler_InvalidInputForMalformedGivens(t *testing.T) {
 	}
 }
 
+// grade (ADR-0021, additive): a solved seed carries a non-empty difficulty band; a valid but
+// non-solved outcome (an all-blank grid parses fine but is not uniquely solvable by logic) leaves
+// grade "". Asserts only the new field — the rest of the frozen shape is covered above.
+func TestGrade_PopulatedWhenSolvedEmptyOtherwise(t *testing.T) {
+	h := api.SolveHandler()
+
+	var solved api.SolveResponse
+	if err := json.Unmarshal(postSolve(t, h, loadSeed(t)[0], "application/json").Body.Bytes(), &solved); err != nil {
+		t.Fatalf("decode solved: %v", err)
+	}
+	if !solved.Solved {
+		t.Fatalf("seed[0] expected to solve; got status=%q", solved.Status)
+	}
+	if solved.Grade == "" {
+		t.Fatalf("solved puzzle: grade is empty, want a difficulty band")
+	}
+
+	var unsolved api.SolveResponse
+	empty := strings.Repeat("0", 81)
+	if err := json.Unmarshal(postSolve(t, h, empty, "application/json").Body.Bytes(), &unsolved); err != nil {
+		t.Fatalf("decode unsolved: %v", err)
+	}
+	if unsolved.Solved {
+		t.Fatalf("empty grid unexpectedly reported solved")
+	}
+	if unsolved.Grade != "" {
+		t.Fatalf("non-solved outcome: grade = %q, want empty", unsolved.Grade)
+	}
+}
+
 // AC-6 content-type (SECURITY §F-12): POST /v1/solve with a non-application/json Content-Type
 // is rejected with HTTP 415.
 func TestAC6_Handler_RejectsNonJSONContentType(t *testing.T) {

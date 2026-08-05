@@ -10,10 +10,16 @@
   <main class="app">
     <header class="head">
       <h1>sudoku&#8202;flow</h1>
-      <p class="sub">Paste or type an 81-character puzzle, then solve.</p>
+      <p class="sub">Pick a test puzzle or type your own, solve it, then step through the logic.</p>
     </header>
 
     <section class="panel" aria-label="Puzzle input">
+      <div class="source">
+        <label class="source-label" for="puzzle-select">Test puzzle</label>
+        <select id="puzzle-select" class="select" aria-label="Load a test puzzle">
+          <option value="">&#8212; choose a puzzle &#8212;</option>
+        </select>
+      </div>
       <div id="grid" class="grid" aria-label="Sudoku grid"></div>
       <div class="controls">
         <button id="solve" class="btn" type="button">Solve</button>
@@ -23,11 +29,30 @@
     </section>
 
     <section id="result" class="result" aria-label="Solution" hidden>
-      <div class="metrics" id="metrics"></div>
-      <details id="log-wrap" class="log-wrap">
-        <summary>Technique event log (<span id="event-count">0</span>)</summary>
+      <div class="win" aria-label="Statistics">
+        <h2 class="win-title">Statistics</h2>
+        <div class="metrics" id="metrics"></div>
+        <div class="hist-wrap">
+          <div class="hist-label">Techniques used</div>
+          <div class="hist" id="hist"></div>
+        </div>
+      </div>
+
+      <div class="win" aria-label="Solve steps">
+        <div class="win-head">
+          <h2 class="win-title">Solve steps</h2>
+          <span id="s-pos" class="s-pos"></span>
+        </div>
+        <div class="step-controls" role="group" aria-label="Step controls">
+          <button id="s-first" class="sbtn" type="button" title="First step" aria-label="First step">&#9198;</button>
+          <button id="s-prev" class="sbtn" type="button" title="Previous step" aria-label="Previous step">&#9664;</button>
+          <button id="s-play" class="sbtn sbtn-wide" type="button" title="Play" aria-label="Play">Play</button>
+          <button id="s-next" class="sbtn" type="button" title="Next step" aria-label="Next step">&#9654;</button>
+          <button id="s-last" class="sbtn" type="button" title="Last step" aria-label="Last step">&#9197;</button>
+        </div>
+        <div id="s-desc" class="s-desc"></div>
         <ol id="log" class="log"></ol>
-      </details>
+      </div>
     </section>
   </main>
 
