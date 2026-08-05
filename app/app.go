@@ -38,6 +38,7 @@ func routes() *http.ServeMux {
 	mux.Handle("POST /v1/solve", api.SolveHandler())
 	mux.Handle("POST /v1/generate", api.GenerateHandler())
 	mux.Handle("POST /v1/validate-batch", api.BatchHandler())
+	mux.Handle("GET /v1/puzzles", api.PuzzlesHandler())
 	// GET / serves the embedded SPA. The /v1 patterns above are more specific and win; this is
 	// the catch-all for GET, so index.html and its assets (app.js, style.css) resolve here.
 	mux.Handle("GET /", api.UIHandler())

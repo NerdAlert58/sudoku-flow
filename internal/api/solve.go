@@ -55,6 +55,14 @@ func SolveHandler() http.Handler {
 		res := solver.Solve(grid)
 		solveTimeMs := hiElapsedMs(start)
 
+		// grade is the difficulty band for a solved puzzle, empty otherwise (ADR-0021, additive).
+		// solver.Grade is the public entry point; it already returns "" for a non-solved outcome,
+		// so it is only invoked on the solved path to keep it off the timed hot path above.
+		grade := ""
+		if res.Solved {
+			grade = solver.Grade(grid)
+		}
+
 		writeJSON(w, http.StatusOK, SolveResponse{
 			APIVersion:      APIVersion,
 			Input:           req.Puzzle,
@@ -65,6 +73,7 @@ func SolveHandler() http.Handler {
 			EventCount:      res.EventCount,
 			CandidateChecks: res.CandidateChecks,
 			SolveTimeMs:     solveTimeMs,
+			Grade:           grade,
 			Events:          toContractEvents(res.Events),
 		})
 	})

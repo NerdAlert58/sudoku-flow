@@ -44,7 +44,11 @@ type SolveResponse struct {
 	EventCount      int     `json:"eventCount"`
 	CandidateChecks int     `json:"candidateChecks"`
 	SolveTimeMs     float64 `json:"solveTimeMs"`
-	Events          []Event `json:"events"`
+	// Grade is the difficulty band (hardest required technique's tier) for a solved puzzle,
+	// via solver.Grade; it is "" for any non-solved outcome. Additive field (ADR-0021); the
+	// key is always emitted, matching the always-present shape of the quartet above.
+	Grade  string  `json:"grade"`
+	Events []Event `json:"events"`
 }
 
 // Cell is a row/column coordinate (0-based) used by the replayable event log.
@@ -90,6 +94,21 @@ type GeneratedPuzzle struct {
 	Puzzle     string `json:"puzzle"`
 	Difficulty string `json:"difficulty"`
 	Grade      string `json:"grade"`
+}
+
+// --- Puzzle catalog contract (GET /v1/puzzles) ---------------------------------------
+
+// PuzzleSection is one named tier of the seed catalog: the display name (e.g. "Original")
+// and its raw 81-char puzzle strings in file order (ADR-0019 tiers).
+type PuzzleSection struct {
+	Name    string   `json:"name"`
+	Puzzles []string `json:"puzzles"`
+}
+
+// PuzzleCatalog is the GET /v1/puzzles success body: the seed corpus grouped into tier
+// sections, in file order, served from the embedded copy so it ships in the binary.
+type PuzzleCatalog struct {
+	Sections []PuzzleSection `json:"sections"`
 }
 
 // --- Batch contract (declared now; wired in P-3) -------------------------------------

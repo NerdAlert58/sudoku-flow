@@ -335,3 +335,36 @@ server via `cmd/server`. **Verified live** on the first successful deploy: `/v1/
 Go builds cannot catch `@vercel/go`'s module-less `internal/` restriction — a real deploy is the only
 check for that class of change. Supersedes ADR-0009's deploy mechanism; cross-links ADR-0008 (stdlib
 routing), ADR-0016 (Vercel manual deploy).
+
+## ADR-0021: UI feature — `GET /v1/puzzles` catalog endpoint + `grade` on `/v1/solve` (additive)
+**Status:** Accepted (2026-08-04, post-ship feature)
+**Source:** embedded-UI enhancement (puzzle dropdown, solve stepper, statistics)
+**Context:** The embedded SPA gained three capabilities: a dropdown to load the test-file puzzles, a
+step-through view of the solve event log, and a statistics window (technique histogram, counts,
+difficulty). Two of these need data the API did not expose: the browser cannot read the repo-root
+`puzzles.txt`, and the solve response carried no difficulty grade. The stepper and the rest of the
+statistics derive entirely from data already in the `/v1/solve` response (`events[]` with `gridAfter`,
+witnesses, placements/eliminations, plus the metric quartet), so only two **additive** API changes
+were required.
+**Decision:**
+- **New `GET /v1/puzzles`** — returns the catalog as `{sections:[{name,puzzles:[...]}, …]}` with display
+  names `Original / Medium / Hard / Very Hard`. The data is **`//go:embed`ed** (`internal/api/puzzles.txt`,
+  a byte-identical copy of the repo-root fixture) — never read from the filesystem, because the Vercel
+  serverless runtime has no working-directory access (same lesson as ADR-0020). A drift-guard test
+  (`bytes.Equal` of the embedded copy vs `../../puzzles.txt`) fails loudly if the two ever diverge. The
+  copy is deliberately NOT placed under `internal/api/web` (that embed.FS is served by the `GET /`
+  file server, which would expose it as a raw download).
+- **`grade` field on `SolveResponse`** (`json:"grade"`, no `omitempty`) — populated on the solved path via
+  the existing `solver.Grade` (ADR-0013). Tradeoff accepted: `solver.Grade` re-solves internally (the
+  technique→band map is unexported), so the solved path solves twice; sub-millisecond and off the timed
+  `solveTimeMs` window. A future cleanup could export the band mapping or have `Grade` accept a `Result`.
+- **Frontend** (`internal/api/web/*`, not a frozen artifact): dropdown, event stepper with cell
+  highlighting (placement/witness/elimination), and the statistics window incl. a ladder-ordered
+  technique histogram. All DOM writes remain `textContent`/`createElement` only (SECURITY.md **F-11** —
+  no `innerHTML`). The grid border scheme was also reworked to be symmetric (every cell owns its
+  right+bottom 1px interior line; all four outer edges and the two box seams a uniform 2px), fixing an
+  earlier top/left-vs-right/bottom unevenness.
+**Consequences:** Both changes are purely additive — no existing endpoint behaviour or field changed, so
+prior AC tests are untouched. New tests cover the catalog handler, the embed drift guard, and the `grade`
+field. Verified locally end-to-end (dropdown → solve → grade/histogram/stats → step highlights). Cross-links
+ADR-0008 (stdlib routing), ADR-0013 (grading), ADR-0020 (serverless embedding), SECURITY.md F-11.
