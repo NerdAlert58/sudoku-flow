@@ -29,11 +29,12 @@ html, body {
    (statistics + solve steps) fills the right so it's visible beside the puzzle without
    scrolling. Collapses to a single stacked column on narrow screens. */
 .app {
+  --cell: min(46px, calc((100vw - 2 * var(--s2)) / 9));
   max-width: 1040px;
   margin: 0 auto;
   padding: var(--s4) var(--s2);
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-columns: calc(var(--cell) * 9) minmax(0, 1fr);
   grid-template-areas:
     "head   head"
     "input  result";
@@ -92,7 +93,7 @@ html, body {
    edges and the two internal 3x3 box seams are a uniform 2px, all painted by cells so the
    thickness and position are identical on all four sides (no cell-vs-container mismatch). */
 .grid {
-  --cell: min(46px, calc((100vw - 2 * var(--s2)) / 9));
+  /* --cell is defined on .app so both the grid and the fixed left column share it. */
   display: grid;
   grid-template-columns: repeat(9, var(--cell));
   grid-template-rows: repeat(9, var(--cell));
@@ -223,3 +224,19 @@ html, body {
 .log li.active { background: #dbeafe; }
 .log .tech { font-weight: 600; color: var(--accent); }
 .log .witness { color: var(--muted); }
+
+/* Explanation window (left column, below the puzzle) — a plain-English definition of the
+   technique used by the current step, updated as you step through the solve. */
+.explain-body { font-size: 13px; line-height: 1.55; }
+.explain-hint { margin: 0; color: var(--muted); }
+.explain-head { display: flex; align-items: center; gap: var(--s1); margin-bottom: 6px; }
+.explain-name { font-weight: 600; color: var(--accent); font-size: 14px; }
+.explain-def { margin: 0; color: var(--ink); }
+.chip {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+  padding: 2px 7px; border-radius: 999px; color: #fff;
+}
+.chip.easy { background: #93c5fd; color: #0b2a5b; }
+.chip.medium { background: #60a5fa; color: #0b2a5b; }
+.chip.hard { background: #2563eb; }
+.chip.expert { background: #1e3a8a; }

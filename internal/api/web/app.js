@@ -288,6 +288,7 @@ const prevBtn = document.getElementById("s-prev");
 const playBtn = document.getElementById("s-play");
 const nextBtn = document.getElementById("s-next");
 const lastBtn = document.getElementById("s-last");
+const explainBody = document.getElementById("explain-body");
 
 firstBtn.addEventListener("click", () => { stopPlay(); goToStep(0); });
 prevBtn.addEventListener("click", () => { stopPlay(); goToStep(stepIndex - 1); });
@@ -337,10 +338,12 @@ function goToStep(k) {
   if (stepIndex === 0) {
     paintState(baseInput, null);
     setDesc(null);
+    paintExplain(null);
   } else {
     const ev = events[stepIndex - 1];
     paintState(typeof ev.gridAfter === "string" ? ev.gridAfter : baseInput, activeOf(ev));
     setDesc(ev);
+    paintExplain(ev);
   }
 
   posEl.textContent = `Step ${stepIndex} / ${events.length}`;
@@ -350,6 +353,55 @@ function goToStep(k) {
   }
   firstBtn.disabled = prevBtn.disabled = stepIndex === 0;
   nextBtn.disabled = lastBtn.disabled = stepIndex === events.length;
+}
+
+// Plain-English definitions of each ladder technique (mirrors internal/solver/ladder.go), shown
+// in the Explanation window and updated by goToStep as the user walks the solve.
+const TECHNIQUES = {
+  naked_single: "The cell has only one candidate left — every other digit already appears in its row, column, or box — so that digit must go here.",
+  hidden_single: "Within a row, column, or box this digit can legally go in only one cell (even though that cell still holds other candidates), so it is placed there.",
+  locked_candidates_pointing: "Inside one box, every remaining spot for a digit lines up in a single row or column. That digit can then be removed from the rest of that row/column outside the box.",
+  locked_candidates_claiming: "Inside one row or column, every remaining spot for a digit falls within a single box. That digit can then be removed from the other cells of that box.",
+  naked_subset: "A group of N cells in a unit together hold only N candidate digits (a naked pair/triple/quad). Those digits can be removed from the unit's other cells.",
+  hidden_subset: "N digits are confined to the same N cells of a unit. Every other candidate can be removed from those N cells, exposing the subset.",
+  x_wing: "A digit's only candidates in two rows sit in the same two columns, forming a rectangle. The digit can then be eliminated from those two columns everywhere else (and symmetrically for columns vs rows).",
+  swordfish: "An X-wing scaled up to three rows and three columns: the digit is confined to three columns across three rows, so it is eliminated from those columns elsewhere.",
+  jellyfish: "An X-wing scaled up to four rows and four columns — the same rectangle logic applied to a 4×4 pattern.",
+  xy_wing: "Three bi-value cells form a hinge: a pivot 'XY' with two pincers 'XZ' and 'YZ'. Any cell seen by both pincers cannot be Z, so Z is eliminated there.",
+  xyz_wing: "Like an XY-wing, but the pivot also contains Z (three cells over digits X/Y/Z). A cell seen by all three loses Z.",
+  w_wing: "Two cells holding the identical two candidates are joined by a strong link on one of them; the other digit is then eliminated from any cell that sees both.",
+  simple_colouring: "One digit's conjugate-pair chain is two-coloured. Where the colouring forces a contradiction (two of one colour in a unit, or a cell seeing both colours), the digit is eliminated.",
+};
+
+// paintExplain writes the plain-English definition of the current step's technique (or a hint
+// when no step is active). F-11: textContent / createElement only.
+function paintExplain(ev) {
+  explainBody.replaceChildren();
+  if (!ev) {
+    const p = document.createElement("p");
+    p.className = "explain-hint";
+    p.textContent = "Solve a puzzle and step through it — each technique is explained here as you go.";
+    explainBody.appendChild(p);
+    return;
+  }
+  const t = ev.technique;
+  const head = document.createElement("div");
+  head.className = "explain-head";
+  const name = document.createElement("span");
+  name.className = "explain-name";
+  name.textContent = prettyTech(t);
+  head.appendChild(name);
+  const band = BAND[t];
+  if (band) {
+    const chip = document.createElement("span");
+    chip.className = "chip " + band;
+    chip.textContent = band; // easy | medium | hard | expert
+    head.appendChild(chip);
+  }
+  const def = document.createElement("p");
+  def.className = "explain-def";
+  def.textContent = TECHNIQUES[t] || "A constructive placement or elimination step in the solver's ladder.";
+  explainBody.append(head, def);
 }
 
 // paintState renders an 81-char grid string. Givens (from baseInput) keep the ink colour;
@@ -481,4 +533,5 @@ function numOr(n) {
 
 // --- init --------------------------------------------------------------------------------
 
+paintExplain(null);
 loadCatalog();
